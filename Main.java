@@ -12,6 +12,9 @@ public class Main extends JFrame
 {
     private BufferedImage image;
     private BufferedImage resultImage;
+    private BufferedImage displayImage;
+    private final int MAX_WIDTH = 600;
+    private double scaleFactor;
     private int squareSize;
     private Graphics2D graphics;
 
@@ -54,6 +57,13 @@ public class Main extends JFrame
             for (int y = startY; y < startY + this.squareSize; y++) {
                 if (x < this.resultImage.getWidth() && y < this.resultImage.getHeight()) {
                     this.resultImage.setRGB(x, y, pixelColor.getRGB());
+                    this.displayImage.setRGB((int)(x * this.scaleFactor), (int)(y * this.scaleFactor), pixelColor.getRGB());
+                }
+
+                int dx = (int)(x * this.scaleFactor);
+                int dy = (int)(y * this.scaleFactor);
+                if (dx < this.displayImage.getWidth() && dy < this.displayImage.getHeight()) {
+                    this.displayImage.setRGB(dx, dy, pixelColor.getRGB());
                 }
             }
         }
@@ -72,13 +82,21 @@ public class Main extends JFrame
         }
     }
 
+
     private void initImage(String filename) throws IOException
     {
         this.image = ImageIO.read(new File(filename));
         this.resultImage = new BufferedImage(this.image.getWidth(), this.image.getHeight(), BufferedImage.TYPE_INT_RGB);
-        this.graphics = resultImage.createGraphics();
-        this.graphics.drawImage(this.image, 0, 0, this);
-        setSize(this.image.getWidth(), this.image.getHeight());
+
+        this.scaleFactor = Math.min(1d, MAX_WIDTH / (double) this.image.getWidth());
+        int scaledWidth = (int) (this.image.getWidth() * this.scaleFactor);
+        int scaledHeight = (int) (this.image.getHeight() * this.scaleFactor);
+        this.displayImage = new BufferedImage(scaledWidth, scaledHeight, BufferedImage.TYPE_INT_RGB);
+        this.graphics = displayImage.createGraphics();
+        this.graphics.drawImage(this.image.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH),
+        0, 0, this);
+
+        setSize(scaledWidth, scaledHeight);
         setVisible(true);
     }
 
@@ -132,8 +150,8 @@ public class Main extends JFrame
 
     @Override
     public void paint(Graphics g) {
-        if (resultImage != null) {
-            g.drawImage(resultImage, 0, 0, this);
+        if (displayImage != null) {
+            g.drawImage(displayImage, 0, 0, this);
         } else {
             super.paint(g);
         }
